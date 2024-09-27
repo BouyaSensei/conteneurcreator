@@ -32,6 +32,6 @@ jobs:
 
       # Étape 4 : Exécuter les tests unitaires avec pytest
       - name: Run unit tests with pytest
-        run: python -m 
+        run: pytest -s 
 
      
