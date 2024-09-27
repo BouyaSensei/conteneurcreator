@@ -2,6 +2,7 @@ import platform
 import subprocess
 import os
 import time
+import pytest
 from colorama import init, Fore, Style
 
 # Initialiser colorama pour la coloration du texte
@@ -96,7 +97,7 @@ if system == "Linux":
 # 4. Créer un conteneur
 container_count = 0
 
-def create_container():
+def create_container(test_choice=None):
     global container_count
     container_count += 1
     # Choisir le type de conteneur
@@ -105,13 +106,16 @@ def create_container():
     print("2. RedHat/Fedora")
     print("3. Python")
 
-    choice = input(Fore.YELLOW + "Votre choix: ")
+    if test_choice is not None:
+        user_choice = test_choice
+    else:
+        user_choice = input(Fore.YELLOW + "Votre choix: ")
 
-    if choice == "1":
+    if user_choice == "1":
         image = "ubuntu"
-    elif choice == "2":
+    elif user_choice == "2":
         image = "fedora"
-    elif choice == "3":
+    elif user_choice == "3":
         image = "python"
     else:
         display_message("Choix invalide.", Fore.RED)
@@ -136,6 +140,7 @@ def create_container():
 
 # 5. Installer SSH et le configurer pour l'accès root
 def install_ssh(container_name, image):
+
     display_message(f"Installation et configuration de SSH dans le conteneur {container_name}...", Fore.YELLOW)
 
     # Commandes pour installer SSH en fonction de l'image
@@ -170,10 +175,19 @@ def install_ssh(container_name, image):
 
     display_message(f"SSH installé et configuré dans le conteneur {container_name}.", Fore.GREEN)
 
+# Nouvelle fonction principale
+def main():
+    test_result = pytest.main(["-v", "tests"])
+    if test_result == 0:
+        print("Tous les tests ont réussi. Lancement du programme principal...")
+        while True:
+            create_container()
+            another = input(Fore.YELLOW + "Voulez-vous créer un autre conteneur ? (y/n): ").lower()
+            if another != "y":
+                break
+    else:
+        print("Les tests ont échoué. Veuillez corriger les erreurs avant d'exécuter le programme.")
 
-# Lancer le processus de création de conteneur
-while True:
-    create_container()
-    another = input(Fore.YELLOW + "Voulez-vous créer un autre conteneur ? (y/n): ").lower()
-    if another != "y":
-        break
+# Point d'entrée du script
+if __name__ == "__main__":
+    main()
