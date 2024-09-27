@@ -3,7 +3,6 @@ import subprocess
 import os
 import time
 import sys
-import pytest
 from colorama import init, Fore, Style
 
 # Initialiser colorama pour la coloration du texte
@@ -13,6 +12,29 @@ init(autoreset=True)
 def display_message(message, color=Fore.WHITE, pause=2):
     print(color + message)
     time.sleep(pause)
+
+def is_root():
+    return os.geteuid() == 0
+
+def gain_root_privileges():
+    if is_root():
+        return True
+    
+    display_message("Tentative d'obtention des privilèges root...", Fore.YELLOW)
+    try:
+        if platform.system() == "Linux":
+            os.execvp('sudo', ['sudo', 'python3'] + sys.argv)
+        elif platform.system() == "Windows":
+            import ctypes
+            if ctypes.windll.shell32.IsUserAnAdmin() == 0:
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+                sys.exit(0)
+        else:
+            display_message("Système d'exploitation non supporté pour l'élévation des privilèges.", Fore.RED)
+            return False
+    except Exception as e:
+        display_message(f"Impossible d'obtenir les privilèges root : {e}", Fore.RED)
+        return False
 
 # 1. Détecter si on est sur Windows ou Linux
 system = platform.system()
@@ -179,8 +201,9 @@ def install_ssh(container_name, image):
 # Nouvelle fonction principale
 def main():
     if not is_root():
-        display_message("Le script doit être exécuté avec des privilèges root.", Fore.RED)
-        sys.exit(1)
+        if not gain_root_privileges():
+            display_message("Le script doit être exécuté avec des privilèges root.", Fore.RED)
+            sys.exit(1)
     
     # Détection du système d'exploitation
     system = platform.system()
